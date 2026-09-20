@@ -3,18 +3,12 @@ import pandas as pd
 import joblib
 
 
-# -----------------------------
-# Load trained model
-# -----------------------------
 
 model = joblib.load("placement_model.pkl")
 scaler = joblib.load("scaler.pkl")
 features = joblib.load("features.pkl")
+threshold = joblib.load("threshold.pkl")
 
-
-# -----------------------------
-# Page Configuration
-# -----------------------------
 
 st.set_page_config(
     page_title="Student Placement Predictor",
@@ -23,9 +17,6 @@ st.set_page_config(
 )
 
 
-# -----------------------------
-# Title
-# -----------------------------
 
 st.title("🎓 Student Placement Predictor")
 
@@ -34,74 +25,99 @@ st.write(
     "using Logistic Regression."
 )
 
+st.divider()
 
-# -----------------------------
-# User Inputs
-# -----------------------------
+
+
+st.subheader("Enter Student Details")
+
 
 IQ = st.number_input(
     "IQ",
     min_value=50,
     max_value=160,
-    value=100
+    value=100,
+    step=1
 )
+
+
+Prev_Sem_Result = st.number_input(
+    "Previous Semester Result",
+    min_value=0.0,
+    max_value=10.0,
+    value=7.0,
+    step=0.01
+)
+
 
 CGPA = st.number_input(
     "CGPA",
     min_value=0.0,
     max_value=10.0,
-    value=7.0
+    value=7.0,
+    step=0.01
 )
+
 
 Academic_Performance = st.number_input(
     "Academic Performance",
     min_value=0,
     max_value=10,
-    value=7
+    value=7,
+    step=1
 )
+
 
 Internship_Experience = st.selectbox(
     "Internship Experience",
     ["No", "Yes"]
 )
 
+
 Extra_Curricular_Score = st.number_input(
     "Extra Curricular Score",
     min_value=0,
     max_value=10,
-    value=5
+    value=5,
+    step=1
 )
+
 
 Communication_Skills = st.number_input(
     "Communication Skills",
     min_value=0,
     max_value=10,
-    value=5
+    value=5,
+    step=1
 )
+
 
 Projects_Completed = st.number_input(
     "Projects Completed",
     min_value=0,
     max_value=20,
-    value=2
+    value=2,
+    step=1
 )
 
 
-# -----------------------------
-# Convert Internship to 0/1
-# -----------------------------
 
-internship_no = 1 if Internship_Experience == "No" else 0
-internship_yes = 1 if Internship_Experience == "Yes" else 0
+if Internship_Experience == "No":
 
+    internship_no = 1
+    internship_yes = 0
 
-# -----------------------------
-# Create Input DataFrame
-# -----------------------------
+else:
+
+    internship_no = 0
+    internship_yes = 1
+
 
 input_data = pd.DataFrame({
 
     "IQ": [IQ],
+
+    "Prev_Sem_Result": [Prev_Sem_Result],
 
     "CGPA": [CGPA],
 
@@ -116,39 +132,63 @@ input_data = pd.DataFrame({
     "Internship_Experience_No": [internship_no],
 
     "Internship_Experience_Yes": [internship_yes]
+
 })
 
 
-# -----------------------------
-# Make sure feature order
-# is same as training
-# -----------------------------
 
 input_data = input_data[features]
 
 
-# -----------------------------
-# Scale input
-# -----------------------------
-
-input_scaled = scaler.transform(input_data)
 
 
-# -----------------------------
-# Prediction
-# -----------------------------
+if st.button(
+    "🔮 Predict Placement",
+    use_container_width=True
+):
 
-if st.button("🔮 Predict Placement"):
 
-    probability = model.predict_proba(input_scaled)[0][1]
+    input_scaled = scaler.transform(input_data)
 
-    threshold = 0.70
 
-    if probability >= threshold:
-        st.success("🎉 Likely to be Placed")
+
+    probability = model.predict_proba(
+        input_scaled
+    )[0][1]
+
+
+
+    prediction = int(
+        probability >= threshold
+    )
+
+
+
+    st.divider()
+
+    st.subheader("Prediction Result")
+
+
+    if prediction == 1:
+
+        st.success(
+            "🎉 Likely to be Placed"
+        )
+
     else:
-        st.error("❌ Likely Not to be Placed")
 
-    st.write(
-        f"Placement Probability: {probability * 100:.2f}%"
+        st.error(
+            "❌ Likely Not to be Placed"
+        )
+
+
+    st.metric(
+        "Placement Probability",
+        f"{probability * 100:.2f}%"
+    )
+
+
+
+    st.progress(
+        float(probability)
     )
