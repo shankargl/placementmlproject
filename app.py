@@ -3,13 +3,14 @@ import pandas as pd
 import joblib
 
 
-
+# Load trained files
 model = joblib.load("placement_model.pkl")
 scaler = joblib.load("scaler.pkl")
 features = joblib.load("features.pkl")
 threshold = joblib.load("threshold.pkl")
 
 
+# Page configuration
 st.set_page_config(
     page_title="Student Placement Predictor",
     page_icon="🎓",
@@ -17,7 +18,7 @@ st.set_page_config(
 )
 
 
-
+# Title
 st.title("🎓 Student Placement Predictor")
 
 st.write(
@@ -28,7 +29,7 @@ st.write(
 st.divider()
 
 
-
+# Input section
 st.subheader("Enter Student Details")
 
 
@@ -101,93 +102,69 @@ Projects_Completed = st.number_input(
 )
 
 
-
+# Convert internship experience into dummy variables
 if Internship_Experience == "No":
-
     internship_no = 1
     internship_yes = 0
-
 else:
-
     internship_no = 0
     internship_yes = 1
 
 
+# Create input dataframe
 input_data = pd.DataFrame({
-
     "IQ": [IQ],
-
     "Prev_Sem_Result": [Prev_Sem_Result],
-
     "CGPA": [CGPA],
-
     "Academic_Performance": [Academic_Performance],
-
     "Extra_Curricular_Score": [Extra_Curricular_Score],
-
     "Communication_Skills": [Communication_Skills],
-
     "Projects_Completed": [Projects_Completed],
-
     "Internship_Experience_No": [internship_no],
-
     "Internship_Experience_Yes": [internship_yes]
-
 })
 
 
-
+# Arrange columns exactly like training data
 input_data = input_data[features]
 
 
-
-
+# Prediction
 if st.button(
     "🔮 Predict Placement",
     use_container_width=True
 ):
 
-
+    # Scale input
     input_scaled = scaler.transform(input_data)
 
-
-
+    # Get probability
     probability = model.predict_proba(
         input_scaled
     )[0][1]
 
-
-
+    # Apply custom threshold
     prediction = int(
         probability >= threshold
     )
-
-
 
     st.divider()
 
     st.subheader("Prediction Result")
 
-
     if prediction == 1:
-
         st.success(
             "🎉 Likely to be Placed"
         )
-
     else:
-
         st.error(
             "❌ Likely Not to be Placed"
         )
-
 
     st.metric(
         "Placement Probability",
         f"{probability * 100:.2f}%"
     )
-
-
 
     st.progress(
         float(probability)
